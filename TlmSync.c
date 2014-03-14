@@ -1,4 +1,4 @@
-#include "../mavlink/include/common/common.h"
+#include "/home/nathan/workspace/mavlink/include/common/common.h"
 #define SYNC_FLAG 0
 #define NEWLINE 0x0A
 #define TIME  0
@@ -103,7 +103,7 @@ void loop(){
 
     //Get Mav Data
     while(buffer_start_index != buffer_end_index){  // when there is something in the buffer
-      if(mavlink_parse_char(MAVLINK_COMM_0, usart_buffer[buffer_start_index++], &mav_msg, &status){
+      if(mavlink_parse_char(MAVLINK_COMM_0, usart_buffer[buffer_start_index++], &mav_msg, &status)){
         switch(msg.msgid){  // check message id
           case GLOBAL_POSITION_INT:
             telem_msg.time_boot_ms = ((mavlink_msg_global_position_t) msg).time_boot_ms;
