@@ -55,14 +55,14 @@ static uint16_t msg_end_index = 0;      // last message byte
 //////////////////////////////////VARIABLES/////////////////////////////////////
 
 int main(void){
-	//SETUP
-	// setup msg_buffer
+  //SETUP
+  // setup msg_buffer
   *msg_buffer = malloc(512);
 
   // USART1 Register Set
   // Enable Rx interrupt, Rx enable, 8N1 @ 112500
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);  // Enable USART1 clk
-  // output PA9 (Tx), PA10 (Rx)
+  // set PA10 (Rx)
   RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE); // Enable GPIOA clk
   // Pin, Mode, Speed, OType, PuPd
   GPIO_InitTypeDef GPIOInitStruct = {GPIO_Pin_10, GPIO_Mode_AF, GPIO_Speed_50MHz\
@@ -79,21 +79,42 @@ int main(void){
   
   
   // USART2 Regsiter Set
-  UCSR1A = 0;
-  UCSR1B |= (1 << TXCIE1); //Enable interrupt
-  UCSR1C |= (1 << UCSZ11) | (1 << UCSZ10);  // set 8 bit frame
-  UBRR1H = (9600 >> 8); // set 9600 baud
-  UBRR1L = (9600 & 0xff);
-  
-  //V_ref is 0, no need to set
-  ACDSRA |= 0x01; //Prescaler set to 2
-  ADCSRA |= (1 << ADEN);//enable ADC
-  ADMUX |= (1 << REFS0);  // Set internal 5V reference
-  //setup timer
-  TCCR1B |= (1 << CS12);  //Set 256 prescaler
-  OCR1AH = (31250 >> 8);  //Half second into compare register
-  OCR1AL = (31250 & 0xff);
-  TIMSK1 |= (1 << OCIE1A);  //Activate interrupt
+  // Enable RxTx interrupt, RxTx enable, 8N1 @ 112500
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART2, ENABLE);  // Enable USART2 clk
+  // output PB3 (Tx), PB4 (Rx)
+  RCC_AHGPeriphClockCmd(RCC_AHBPeriphGPIOA, ENABLE);  // Enable GPIOB clk
+  // Pin, Mode, SPeed, OType, PuPd
+  // Set PB4
+  GPIOInitStruct = {GPIO_Pin_4, GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP,\
+      GPIO_PuPd_UP};
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_7);
+  GPIO_Init(GPIOB, GPIOInitStruct);
+  // Set PB3
+  GPIOInitStruct.GPIO_Pin = GPIO_Pin_3;
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_7);
+  GPIO_Init(GPIOB, GPIOInitStruct);
+  // Set USART using old stuff
+  USARTInitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // set both Rx/Tx
+  USART_Init(USART2, USARTInitStruct);
+  // Enable Rx Interrupt
+  USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+
+  // Setup ADC1
+  // Set clock for high speed
+  RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div1);
+  // Supply RCC clk to ADC
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_ADC12);
+  // Setup GPIO in analog pins 
+  // Use PF0 and PF1 for roll and pitch
+  GPIOInitStruct.GPIO_Pin = GPIO_Pin_0;
+  GPIOInitStruct.GPIO_Mode = GPIO_Mode_AN;
+  GPIO_Init(GPIOF, GPIOInitStruct);
+  GPIOInitStruct.GPIO_Pin = GPIO_Pin_1;
+  GPIO_Init(GPIOF, GPIOInitStruct);
+
+  //setup timer 2Hz OCR
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM1, ENABLE);  // enable TIM1 clk
+
 }
 
 
